@@ -12,7 +12,7 @@ namespace System
     {
 		public static IServiceProvider ConfigureEntities(this IServiceProvider serviceProvider, ModelBuilder modelBuilder)
 		{
-			var provider = serviceProvider.GetService<IEntityConfiguratorTypeProvider>();
+			var provider = serviceProvider.GetRequiredService<IEntityConfiguratorTypeProvider>();
             var configurators = provider.EntityConfiguratorTypes.Select(x => (IEntityConfigurator)Activator.CreateInstance(x.AsType())).ToList();
 
 			//foreach (var configurator in configurators)
