@@ -14,24 +14,25 @@ namespace Persistence
 	public class UnitOfWork<TContext> : IUnitOfWork<TContext>
 		where TContext : DbContext, new()
 	{
-		private readonly TContext _context;
 		private readonly IServiceProvider _serviceProvider;
 		private readonly Dictionary<Type, object> _repositories = new Dictionary<Type, object>();
 
-		public UnitOfWork(TContext context, IServiceProvider serviceProvider)
+        public TContext Context { get; private set; }
+
+        public UnitOfWork(TContext context, IServiceProvider serviceProvider)
 		{
-			_context = context;
+			Context = context;
 			_serviceProvider = serviceProvider;
 		}
 
 		public async Task<int> CommitAsync()
 		{
-            var serviceProvider = _context.GetInfrastructure();
+            var serviceProvider = Context.GetInfrastructure();
 			var dispatcher = serviceProvider.GetRequiredService<IDomainEventDispatcher>();
 
-			_context.ChangeTracker.DetectChanges();
+			Context.ChangeTracker.DetectChanges();
 			
-			var domainEventEntities = _context.ChangeTracker.Entries<IEntity>()
+			var domainEventEntities = Context.ChangeTracker.Entries<IEntity>()
 				.Select(x => x.Entity)
 				.Where(x => x.Events.Any())
 				.ToArray();
@@ -51,7 +52,7 @@ namespace Persistence
 
 			try
 			{
-				int count = await _context.SaveChangesAsync();
+                int count = await Context.SaveChangesAsync();
 
 				await dispatcher.DispatchPostCommitAsync<IUnitOfWork<TContext>>(this);
 
@@ -72,8 +73,14 @@ namespace Persistence
 
 						throw new UniqueConstraintException(e);
 					}
-				}
+                    else if (errors.Any(x => x.Number == 547))
+                    {
+                        // 547: The %ls statement conflicted with the %ls constraint "%.*ls". The conflict occurred in database "%.*ls", table "%.*ls"%ls%.*ls%ls.
 
+                        throw new RelationException(e);
+                    }
+                }
+                
 				throw;
 			}
 		}
@@ -92,7 +99,7 @@ namespace Persistence
 					{
 						instance = Activator.CreateInstance(
 							typeof(Repository<>).MakeGenericType(typeof(T)),
-							_context);
+							Context);
 					}
 
 					_repositories.Add(type, instance);
@@ -104,7 +111,7 @@ namespace Persistence
 
 		public void Dispose()
 		{
-			_context.Dispose();
+			Context.Dispose();
 		}
 	}
 }

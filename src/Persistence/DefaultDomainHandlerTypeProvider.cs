@@ -8,7 +8,7 @@ namespace Persistence
 {
     public class DefaultDomainHandlerTypeProvider : IDomainHandlerTypeProvider
     {
-        private static string _libraryName = "Kernel";
+        private static string _libraryName = "Persistence";
         private readonly ILibraryManager _libraryManager;
 
         public DefaultDomainHandlerTypeProvider(ILibraryManager libraryManager)
