@@ -60,10 +60,10 @@ namespace Microsoft.Extensions.DependencyInjection
 		}
 
 		public PersistenceServicesBuilder AddUnitOfWork<TContext>(string connectionString)
-			where TContext : DbContext, new()
+			where TContext : DbContext
 		{
 			_services.GetInfrastructure().AddScoped<IUnitOfWork<TContext>, UnitOfWork<TContext>>();
-
+                
 			_services.AddDbContext<TContext>(options =>
 			{
 				options.UseSqlServer(connectionString);
@@ -71,5 +71,15 @@ namespace Microsoft.Extensions.DependencyInjection
 
 			return this;
 		}
-	}
+
+        public PersistenceServicesBuilder AddMultiTenantUnitOfWork<TContext>()
+            where TContext : DbContext
+        {
+            _services.GetInfrastructure().AddScoped<IUnitOfWork<TContext>, UnitOfWork<TContext>>();
+
+            _services.AddDbContext<TContext>();
+
+            return this;
+        }
+    }
 }

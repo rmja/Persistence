@@ -12,7 +12,7 @@ using DomainModel;
 namespace Persistence
 {
 	public class UnitOfWork<TContext> : IUnitOfWork<TContext>
-		where TContext : DbContext, new()
+		where TContext : DbContext
 	{
 		private readonly IServiceProvider _serviceProvider;
 		private readonly Dictionary<Type, object> _repositories = new Dictionary<Type, object>();
