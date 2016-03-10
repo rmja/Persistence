@@ -26,11 +26,11 @@ namespace Microsoft.Extensions.DependencyInjection
             foreach (var typeInfo in provider.DomainHandlerTypes)
             {
                 var type = typeInfo.AsType();
-                var domainHandlerGenericInterface = type.GetInterfaces().SingleOrDefault(x => x.GetTypeInfo().IsGenericType && x.GetGenericTypeDefinition() == typeof(IDomainHandler<>));
+                var domainHandlerGenericInterfaces = type.GetInterfaces().Where(x => x.GetTypeInfo().IsGenericType && x.GetGenericTypeDefinition() == typeof(IDomainHandler<>));
                 var commitHandlerGenericInterface = type.GetInterfaces().SingleOrDefault(x => x.GetTypeInfo().IsGenericType && x.GetGenericTypeDefinition() == typeof(IDomainCommitHandler<>));
 
                 services.AddScoped(type);
-                if (domainHandlerGenericInterface != null)
+                foreach (var domainHandlerGenericInterface in domainHandlerGenericInterfaces)
                 {
                     services.AddScoped(domainHandlerGenericInterface, serviceProvider =>
                     {
