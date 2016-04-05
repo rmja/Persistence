@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.Entity;
+﻿using Microsoft.EntityFrameworkCore;
 using System.Linq;
 
 namespace Persistence
@@ -19,7 +19,7 @@ namespace Persistence
 			return _set;
 		}
 
-		public void Insert(TEntity entity)
+		public virtual void Insert(TEntity entity)
 		{
 			_set.Add(entity);
 		}

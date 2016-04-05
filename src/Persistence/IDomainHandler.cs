@@ -3,13 +3,13 @@ using DomainModel;
 
 namespace Persistence
 {
-    public interface IDomainHandler<TEvent> : IDomainHandler
+    public interface IEventDomainHandler<TEvent> : IDomainHandler
 		where TEvent : IDomainEvent
     {
 		void Handle(TEvent domainEvent);
 	}
 
-    public interface IDomainCommitHandler<TUnitOfWork> : IDomainHandler
+    public interface ICommitDomainHandler<TUnitOfWork> : IDomainHandler
     {
         Task PreCommitAsync(TUnitOfWork uow);
         Task PostCommitAsync(TUnitOfWork uow);

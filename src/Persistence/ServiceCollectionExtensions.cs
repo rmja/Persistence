@@ -1,8 +1,9 @@
-﻿using Microsoft.Data.Entity;
-using Microsoft.Data.Entity.Infrastructure;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.PlatformAbstractions;
 using Persistence;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -13,36 +14,34 @@ namespace Microsoft.Extensions.DependencyInjection
     {
 		public static PersistenceServicesBuilder AddPersistence(this IServiceCollection services)
 		{
-            services.AddSingleton<IEntityConfiguratorTypeProvider, DefaultEntityConfiguratorTypeProvider>();
 			services.AddSingleton<IDomainEventDispatcher, DomainEventDispatcher>();
+
+            var typeProvider = new EntityConfiguratorTypeProvider();
+            foreach (var typeInfo in typeProvider.EntityConfiguratorTypes)
+            {
+                services.AddSingleton(typeof(IEntityConfigurator), typeInfo.AsType());
+            }
 
 			return new PersistenceServicesBuilder(services.AddEntityFramework().AddSqlServer());
         }
 
-        public static IServiceCollection AddDomainHandlers(this IServiceCollection services, ILibraryManager libraryManager)
+        public static IServiceCollection AddDomainHandlers(this IServiceCollection services)
         {
-            var provider = new DefaultDomainHandlerTypeProvider(libraryManager);
-
-            foreach (var typeInfo in provider.DomainHandlerTypes)
+            var typeProvider = new DomainHandlerTypeProvider();
+            foreach (var typeInfo in typeProvider.DomainHandlerTypes)
             {
                 var type = typeInfo.AsType();
-                var domainHandlerGenericInterfaces = type.GetInterfaces().Where(x => x.GetTypeInfo().IsGenericType && x.GetGenericTypeDefinition() == typeof(IDomainHandler<>));
-                var commitHandlerGenericInterface = type.GetInterfaces().SingleOrDefault(x => x.GetTypeInfo().IsGenericType && x.GetGenericTypeDefinition() == typeof(IDomainCommitHandler<>));
+                var eventHandlerGenericInterfaces = type.GetInterfaces().Where(x => x.GetTypeInfo().IsGenericType && x.GetGenericTypeDefinition() == typeof(IEventDomainHandler<>));
+                var commitHandlerGenericInterfaces = type.GetInterfaces().Where(x => x.GetTypeInfo().IsGenericType && x.GetGenericTypeDefinition() == typeof(ICommitDomainHandler<>));
 
                 services.AddScoped(type);
-                foreach (var domainHandlerGenericInterface in domainHandlerGenericInterfaces)
+                foreach (var domainHandlerGenericInterface in eventHandlerGenericInterfaces)
                 {
-                    services.AddScoped(domainHandlerGenericInterface, serviceProvider =>
-                    {
-                        return serviceProvider.GetService(type);
-                    });
+                    services.AddScoped(domainHandlerGenericInterface, serviceProvider => serviceProvider.GetService(type));
                 }
-                if (commitHandlerGenericInterface != null)
+                foreach (var commitHandlerGenericInterface in commitHandlerGenericInterfaces)
                 {
-                    services.AddScoped(commitHandlerGenericInterface, serviceProvider =>
-                    {
-                        return serviceProvider.GetService(type);
-                    });
+                    services.AddScoped(commitHandlerGenericInterface, serviceProvider => serviceProvider.GetService(type));
                 }
             }
 

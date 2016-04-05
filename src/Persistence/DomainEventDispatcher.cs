@@ -20,7 +20,7 @@ namespace Persistence
 		public void Dispatch(IDomainEvent domainEvent)
 		{
 			var eventType = domainEvent.GetType();
-			var handlerType = typeof(IDomainHandler<>).MakeGenericType(eventType);
+			var handlerType = typeof(IEventDomainHandler<>).MakeGenericType(eventType);
 			var handlersType = typeof(IEnumerable<>).MakeGenericType(handlerType);
 			var handlers = (IEnumerable)_serviceProvider.GetService(handlersType);
 
@@ -36,7 +36,7 @@ namespace Persistence
 		}
 		public async Task DispatchPreCommitAsync<TUnitOfWork>(TUnitOfWork uow)
 		{
-			var handlers = _serviceProvider.GetService<IEnumerable<IDomainCommitHandler<TUnitOfWork>>>();
+			var handlers = _serviceProvider.GetService<IEnumerable<ICommitDomainHandler<TUnitOfWork>>>();
 
 			if (handlers != null)
 			{
@@ -49,7 +49,7 @@ namespace Persistence
 
 		public async Task DispatchPostCommitAsync<TUnitOfWork>(TUnitOfWork uow)
 		{
-			var handlers = _serviceProvider.GetService<IEnumerable<IDomainCommitHandler<TUnitOfWork>>>();
+			var handlers = _serviceProvider.GetService<IEnumerable<ICommitDomainHandler<TUnitOfWork>>>();
 
 			if (handlers != null)
 			{
